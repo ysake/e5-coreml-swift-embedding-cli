@@ -207,7 +207,7 @@ private actor CoreMLTextEmbedderRuntime {
     private let expectedEmbeddingDimension: Int
     private var resolvedAssets: CoreMLTextEmbeddingResolvedAssets?
     private var tokenizer: HuggingFaceTextTokenizer?
-    private var model: MLModel?
+    private var model: SendableMLModel?
 
     init(
         assets: CoreMLTextEmbeddingAssets,
@@ -233,7 +233,7 @@ private actor CoreMLTextEmbedderRuntime {
 
         let outputProvider: MLFeatureProvider
         do {
-            outputProvider = try model.prediction(from: inputProvider)
+            outputProvider = try await model.prediction(from: inputProvider)
         } catch {
             throw EmbeddingError.coreMLPredictionFailed(reason: error.localizedDescription)
         }
@@ -259,13 +259,15 @@ private actor CoreMLTextEmbedderRuntime {
         return loadedTokenizer
     }
 
-    private func cachedModel() throws -> MLModel {
+    private func cachedModel() throws -> SendableMLModel {
         if let model {
             return model
         }
 
         let resolvedAssets = try cachedAssets()
-        let loadedModel = try CoreMLTextEmbedder.loadModel(from: resolvedAssets.modelURL)
+        let loadedModel = SendableMLModel(
+            model: try CoreMLTextEmbedder.loadModel(from: resolvedAssets.modelURL)
+        )
         model = loadedModel
         return loadedModel
     }
@@ -281,7 +283,15 @@ private actor CoreMLTextEmbedderRuntime {
     }
 }
 
-final class CoreMLTextEmbeddingInputProvider: MLFeatureProvider {
+private struct SendableMLModel: @unchecked Sendable {
+    let model: MLModel
+
+    func prediction(from inputProvider: CoreMLTextEmbeddingInputProvider) async throws -> MLFeatureProvider {
+        try await model.prediction(from: inputProvider)
+    }
+}
+
+final class CoreMLTextEmbeddingInputProvider: MLFeatureProvider, @unchecked Sendable {
     private let features: [String: MLFeatureValue]
 
     var featureNames: Set<String> {
