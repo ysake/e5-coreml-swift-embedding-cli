@@ -125,11 +125,11 @@ For detailed setup, asset packaging, and runtime behavior, see [`docs/visionos-a
 Add the package by URL and depend on the library product:
 
 ```swift
-.package(url: "https://github.com/ysake/e5-coreml-swift-embedding-cli", branch: "main")
+.package(url: "https://github.com/ysake/e5-coreml-swift", branch: "main")
 ```
 
 ```swift
-.product(name: "E5EmbeddingCore", package: "e5-coreml-swift-embedding-cli")
+.product(name: "E5EmbeddingCore", package: "e5-coreml-swift")
 ```
 
 Add the generated assets to the app target:
@@ -453,11 +453,11 @@ swift run e5-embed-similarity --backend deterministic \
 Package URLを追加し、library productに依存します。
 
 ```swift
-.package(url: "https://github.com/ysake/e5-coreml-swift-embedding-cli", branch: "main")
+.package(url: "https://github.com/ysake/e5-coreml-swift", branch: "main")
 ```
 
 ```swift
-.product(name: "E5EmbeddingCore", package: "e5-coreml-swift-embedding-cli")
+.product(name: "E5EmbeddingCore", package: "e5-coreml-swift")
 ```
 
 生成済みassetsをアプリtargetに追加します。
