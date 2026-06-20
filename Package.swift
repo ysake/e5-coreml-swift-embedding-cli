@@ -15,6 +15,10 @@ let package = Package(
         .executable(
             name: "e5-embed",
             targets: ["E5EmbedCLI"]
+        ),
+        .executable(
+            name: "e5-embed-similarity",
+            targets: ["E5EmbedSimilarityCLI"]
         )
     ],
     dependencies: [
@@ -29,6 +33,10 @@ let package = Package(
         ),
         .executableTarget(
             name: "E5EmbedCLI",
+            dependencies: ["E5EmbeddingCore"]
+        ),
+        .executableTarget(
+            name: "E5EmbedSimilarityCLI",
             dependencies: ["E5EmbeddingCore"]
         ),
         .testTarget(
