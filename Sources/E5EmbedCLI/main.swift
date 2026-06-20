@@ -41,18 +41,30 @@ private enum Backend: String {
 private struct CLIOptions {
     static let usage = """
     Usage:
-      swift run e5-embed [--purpose query|passage] [--backend coreml|deterministic] <text>
+      swift run e5-embed [options] <text>
 
-    Defaults:
-      --purpose query
-      --backend coreml
+    Options:
+      --purpose query|passage              Default: query
+      --backend coreml|deterministic       Default: coreml
+      --model <path>                       Core ML .mlpackage/.mlmodelc path
+      --tokenizer <path>                   Tokenizer assets directory
+      --max-length <n>                     Default: 128
+      --model-name <name>                  JSON model field
     """
 
     let purpose: EmbeddingPurpose
     let backend: Backend
     let text: String
+    let modelPath: String?
+    let tokenizerPath: String?
+    let maxSequenceLength: Int
+    let modelNameOverride: String?
 
     var modelName: String {
+        if let modelNameOverride {
+            return modelNameOverride
+        }
+
         switch backend {
         case .coreML:
             return CoreMLTextEmbedder.defaultModelName
@@ -64,6 +76,10 @@ private struct CLIOptions {
     static func parse(_ arguments: [String]) throws -> CLIOptions {
         var purpose = EmbeddingPurpose.query
         var backend = Backend.coreML
+        var modelPath: String?
+        var tokenizerPath: String?
+        var maxSequenceLength = 128
+        var modelNameOverride: String?
         var textParts: [String] = []
         var index = 0
 
@@ -87,6 +103,33 @@ private struct CLIOptions {
                     throw CLIError.invalidBackend(arguments[index])
                 }
                 backend = parsedBackend
+            case "--model":
+                index += 1
+                guard index < arguments.count else {
+                    throw CLIError.missingValue(option: "--model")
+                }
+                modelPath = arguments[index]
+            case "--tokenizer":
+                index += 1
+                guard index < arguments.count else {
+                    throw CLIError.missingValue(option: "--tokenizer")
+                }
+                tokenizerPath = arguments[index]
+            case "--max-length":
+                index += 1
+                guard index < arguments.count else {
+                    throw CLIError.missingValue(option: "--max-length")
+                }
+                guard let parsedMaxLength = Int(arguments[index]), parsedMaxLength > 0 else {
+                    throw CLIError.invalidMaxLength(arguments[index])
+                }
+                maxSequenceLength = parsedMaxLength
+            case "--model-name":
+                index += 1
+                guard index < arguments.count else {
+                    throw CLIError.missingValue(option: "--model-name")
+                }
+                modelNameOverride = arguments[index]
             default:
                 textParts.append(argument)
             }
@@ -99,16 +142,52 @@ private struct CLIOptions {
             throw EmbeddingError.emptyInput
         }
 
-        return CLIOptions(purpose: purpose, backend: backend, text: text)
+        return CLIOptions(
+            purpose: purpose,
+            backend: backend,
+            text: text,
+            modelPath: modelPath,
+            tokenizerPath: tokenizerPath,
+            maxSequenceLength: maxSequenceLength,
+            modelNameOverride: modelNameOverride
+        )
     }
 
     func makeEmbedder() throws -> any TextEmbedder {
         switch backend {
         case .coreML:
-            return try CoreMLTextEmbedder()
+            let repositoryRoot = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+            let modelCandidates: [URL]
+            if let modelPath {
+                modelCandidates = [Self.fileURL(from: modelPath, relativeTo: repositoryRoot)]
+            } else {
+                modelCandidates = [
+                    repositoryRoot.appendingPathComponent("Models/E5SmallEmbedding.mlpackage"),
+                    repositoryRoot.appendingPathComponent("Models/E5SmallEmbedding.mlmodelc")
+                ]
+            }
+
+            let tokenizerDirectory = Self.fileURL(
+                from: tokenizerPath ?? "Tokenizer",
+                relativeTo: repositoryRoot
+            )
+
+            return try CoreMLTextEmbedder(
+                modelCandidates: modelCandidates,
+                tokenizerDirectory: tokenizerDirectory,
+                maxSequenceLength: maxSequenceLength
+            )
         case .deterministic:
             return DeterministicTextEmbedder()
         }
+    }
+
+    private static func fileURL(from path: String, relativeTo root: URL) -> URL {
+        if path.hasPrefix("/") {
+            return URL(fileURLWithPath: path).standardizedFileURL
+        }
+
+        return root.appendingPathComponent(path).standardizedFileURL
     }
 }
 
@@ -116,6 +195,7 @@ private enum CLIError: Error {
     case helpRequested
     case missingValue(option: String)
     case invalidBackend(String)
+    case invalidMaxLength(String)
     case outputEncodingFailed
 }
 
@@ -128,6 +208,8 @@ extension CLIError: LocalizedError {
             return "Missing value for \(option)."
         case .invalidBackend(let value):
             return "Invalid backend '\(value)'. Expected 'coreml' or 'deterministic'."
+        case .invalidMaxLength(let value):
+            return "Invalid max length '\(value)'. Expected a positive integer."
         case .outputEncodingFailed:
             return "Failed to encode JSON output as UTF-8."
         }
