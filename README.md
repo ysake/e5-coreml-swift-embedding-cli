@@ -125,7 +125,7 @@ Add the package by URL and depend on the library product:
 ```
 
 ```swift
-.product(name: "E5EmbeddingCore", package: "e5-coreml-swift")
+.product(name: "E5EmbeddingCore", package: "e5-coreml-swift-embedding-cli")
 ```
 
 Add the generated assets to the app target:
@@ -449,7 +449,7 @@ Package URLを追加し、library productに依存します。
 ```
 
 ```swift
-.product(name: "E5EmbeddingCore", package: "e5-coreml-swift")
+.product(name: "E5EmbeddingCore", package: "e5-coreml-swift-embedding-cli")
 ```
 
 生成済みassetsをアプリtargetに追加します。
