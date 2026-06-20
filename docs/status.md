@@ -1,13 +1,18 @@
 # Status
 
-This repository now has the first SwiftPM implementation milestone:
+This repository now has the SwiftPM CLI implementation milestone:
 
 - `E5EmbeddingCore` library target
 - `e5-embed` CLI target
+- `e5-embed-similarity` CLI target
 - `E5EmbeddingCoreTests` test target
 - E5 `query:` / `passage:` prefix handling
+- local tokenizer loading through `swift-transformers`
+- Core ML model loading and prediction
 - cosine/dot-product helpers
 - Core ML input padding/masking helper
-- readable missing-asset errors for the future Core ML backend
+- Python conversion script for `intfloat/multilingual-e5-small`
+- readable missing-asset errors
+- asset-gated integration test that runs only when model/tokenizer files are present
 
-The Core ML model and tokenizer are not wired yet. The next task is to add tokenizer integration and real Core ML prediction behind `TextEmbedder`.
+The generated Core ML model artifact is intentionally not committed. Use `scripts/convert_e5_small_to_coreml.py` to create `Models/E5SmallEmbedding.mlpackage` and `Tokenizer/` locally, or store generated artifacts with Git LFS if the repository later decides to track them.

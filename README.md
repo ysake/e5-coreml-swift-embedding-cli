@@ -4,6 +4,89 @@ Swift Package Manager command-line sample for generating text embeddings locally
 
 This repository is a proof-of-concept for building a reusable embedding layer that can later be shared with iOS and visionOS apps.
 
+## Current status
+
+Implemented:
+
+- SwiftPM package with `E5EmbeddingCore`
+- `e5-embed` JSON embedding CLI
+- `e5-embed-similarity` JSON similarity CLI
+- E5 `query:` / `passage:` prefix handling
+- local tokenizer loading with Hugging Face `swift-transformers`
+- Core ML input creation and prediction wiring
+- conversion script at `scripts/convert_e5_small_to_coreml.py`
+- unit tests for pure Swift logic, Core ML input/output handling, and missing-asset errors
+
+Not committed:
+
+- generated Core ML model artifacts under `Models/`
+- generated tokenizer assets under `Tokenizer/`
+
+Generate those locally with the conversion script, or decide to track them later with Git LFS.
+
+## Setup
+
+Build and test the Swift package:
+
+```bash
+swift build
+swift test
+```
+
+Generate the Core ML model and tokenizer assets:
+
+```bash
+python3 -m venv .venv
+. .venv/bin/activate
+pip install torch transformers coremltools numpy
+python scripts/convert_e5_small_to_coreml.py --validate
+```
+
+The script writes:
+
+```text
+Models/E5SmallEmbedding.mlpackage
+Tokenizer/
+```
+
+The model package can be large and is ignored by git by default.
+
+## Usage
+
+Embedding:
+
+```bash
+swift run e5-embed "車内の収納を増やしたい"
+swift run e5-embed --purpose passage "セレナの荷室容量を増やすには、車内収納やルーフボックスを検討する。"
+```
+
+Custom asset paths:
+
+```bash
+swift run e5-embed \
+  --model Models/E5SmallEmbedding.mlpackage \
+  --tokenizer Tokenizer \
+  --max-length 128 \
+  "テスト"
+```
+
+Similarity:
+
+```bash
+swift run e5-embed-similarity \
+  --query "車内の収納を増やしたい" \
+  --passage "セレナの荷物積載量を増やす方法"
+```
+
+Development smoke test without model assets:
+
+```bash
+swift run e5-embed --backend deterministic "テスト"
+swift run e5-embed-similarity --backend deterministic \
+  --query "車内の収納を増やしたい" \
+  --passage "セレナの荷物積載量を増やす方法"
+```
+
 ## Goal
 
 Build a minimal Swift CLI that accepts Japanese or multilingual text and returns an embedding vector.
@@ -142,13 +225,13 @@ swift run e5-embed-similarity \
 
 ## Model conversion
 
-A Python conversion script should be added later under:
+A Python conversion script is available under:
 
 ```text
 scripts/convert_e5_small_to_coreml.py
 ```
 
-The script should:
+The script:
 
 1. Load `intfloat/multilingual-e5-small`.
 2. Wrap the encoder with mean pooling.
@@ -185,6 +268,89 @@ Tokenizer/
 Core MLに変換したE5系embeddingモデルを使って、Swift Package Managerのコマンドラインツールからローカルで文章ベクトルを生成するためのサンプルリポジトリです。
 
 将来的には、ここで作ったembedding層をiOS / visionOSアプリから再利用することを想定しています。
+
+## 現在の状態
+
+実装済み:
+
+- `E5EmbeddingCore` を持つ SwiftPM package
+- JSONを返す `e5-embed` embedding CLI
+- JSONを返す `e5-embed-similarity` 類似度CLI
+- E5の `query:` / `passage:` prefix処理
+- Hugging Face `swift-transformers` によるローカルtokenizer読み込み
+- Core ML入力生成とprediction呼び出し
+- `scripts/convert_e5_small_to_coreml.py` の変換スクリプト
+- pure Swift logic、Core ML入出力、asset未配置エラーのunit test
+
+コミットしていないもの:
+
+- `Models/` 配下の生成済みCore ML model artifact
+- `Tokenizer/` 配下の生成済みtokenizer assets
+
+これらは変換スクリプトでローカル生成します。リポジトリで管理する場合はGit LFSの利用を検討してください。
+
+## セットアップ
+
+Swift packageをビルド・テストします。
+
+```bash
+swift build
+swift test
+```
+
+Core MLモデルとtokenizer assetsを生成します。
+
+```bash
+python3 -m venv .venv
+. .venv/bin/activate
+pip install torch transformers coremltools numpy
+python scripts/convert_e5_small_to_coreml.py --validate
+```
+
+スクリプトは以下を書き出します。
+
+```text
+Models/E5SmallEmbedding.mlpackage
+Tokenizer/
+```
+
+model packageは大きくなるため、デフォルトではgit管理から除外しています。
+
+## 使い方
+
+Embedding:
+
+```bash
+swift run e5-embed "車内の収納を増やしたい"
+swift run e5-embed --purpose passage "セレナの荷室容量を増やすには、車内収納やルーフボックスを検討する。"
+```
+
+asset pathを明示する場合:
+
+```bash
+swift run e5-embed \
+  --model Models/E5SmallEmbedding.mlpackage \
+  --tokenizer Tokenizer \
+  --max-length 128 \
+  "テスト"
+```
+
+類似度:
+
+```bash
+swift run e5-embed-similarity \
+  --query "車内の収納を増やしたい" \
+  --passage "セレナの荷物積載量を増やす方法"
+```
+
+model assetsなしの開発用smoke test:
+
+```bash
+swift run e5-embed --backend deterministic "テスト"
+swift run e5-embed-similarity --backend deterministic \
+  --query "車内の収納を増やしたい" \
+  --passage "セレナの荷物積載量を増やす方法"
+```
 
 ## 目的
 
@@ -324,7 +490,7 @@ swift run e5-embed-similarity \
 
 ## モデル変換
 
-Python変換スクリプトを後で以下に追加します。
+Python変換スクリプトは以下にあります。
 
 ```text
 scripts/convert_e5_small_to_coreml.py

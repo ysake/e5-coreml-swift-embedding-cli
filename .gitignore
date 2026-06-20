@@ -31,6 +31,16 @@ playground.xcworkspace
 
 .build/
 
+# Python
+__pycache__/
+*.py[cod]
+
+# Generated model artifacts can be large. Keep generation scripts in git and
+# store model packages via Git LFS or local artifact storage when needed.
+Models/*.mlpackage/
+Models/*.mlmodelc/
+Models/*.mlmodel
+
 # CocoaPods
 #
 # We recommend against adding the Pods directory to your .gitignore. However
