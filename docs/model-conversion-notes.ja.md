@@ -51,7 +51,8 @@ scripts/convert_e5_small_to_coreml.py
 - max sequence lengthは最初は128でよい。
 - 長文対応は後続課題にする。
 - `.mlpackage` はサイズが大きくなる可能性があるため、Git LFSを使うか、生成手順だけをgit管理するか検討する。
-- Core ML変換時の `compute_precision` は、まず `FLOAT16` でよい。
+- アプリ組み込み向けの `compute_precision` は `FLOAT32` を標準にする。BrainCopy の visionOS Simulator 検証では、`FLOAT16` 変換モデルが L2 norm `0.0000` のゼロベクトルを返し、`FLOAT32` 変換モデルでは 384 次元 embedding が得られた。
+- macOS や実機ごとの検証で `FLOAT16` を試す場合は、明示的に `--compute-precision FLOAT16` を指定する。
 - Swift側で出力名 `embedding` を前提にするなら、変換スクリプト側でも出力名を固定する。
 
 ## 最小検証

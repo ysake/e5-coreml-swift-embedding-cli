@@ -51,7 +51,8 @@ scripts/convert_e5_small_to_coreml.py
 - Initial max sequence length can be 128.
 - Long-text support should be a follow-up task.
 - `.mlpackage` may be large; consider Git LFS or only storing generation instructions in git.
-- `FLOAT16` is a reasonable first `compute_precision` setting.
+- Use `FLOAT32` as the default `compute_precision` for app integration. BrainCopy visionOS Simulator testing saw `FLOAT16` converted models return zero vectors with L2 norm `0.0000`, while `FLOAT32` produced usable 384-dimensional embeddings.
+- `FLOAT16` can still be tested explicitly with `--compute-precision FLOAT16` for macOS or device-specific experiments.
 - If Swift expects the output name `embedding`, the conversion script should fix that output name.
 
 ## Minimal validation

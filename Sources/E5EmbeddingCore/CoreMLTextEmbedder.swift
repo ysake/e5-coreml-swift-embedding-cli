@@ -9,8 +9,10 @@ public struct CoreMLTextEmbedder: TextEmbedder {
         "special_tokens_map.json"
     ]
 
+    public let assets: CoreMLTextEmbeddingAssets
     public let modelCandidates: [URL]
     public let tokenizerDirectory: URL
+    public let tokenizerDirectoryCandidates: [URL]
     public let maxSequenceLength: Int
     public let outputFeatureName: String
     public let expectedEmbeddingDimension: Int
@@ -23,11 +25,7 @@ public struct CoreMLTextEmbedder: TextEmbedder {
         expectedEmbeddingDimension: Int = 384
     ) throws {
         try self.init(
-            modelCandidates: [
-                repositoryRoot.appendingPathComponent("Models/E5SmallEmbedding.mlpackage"),
-                repositoryRoot.appendingPathComponent("Models/E5SmallEmbedding.mlmodelc")
-            ],
-            tokenizerDirectory: repositoryRoot.appendingPathComponent("Tokenizer"),
+            assets: .repositoryLayout(root: repositoryRoot),
             maxSequenceLength: maxSequenceLength,
             outputFeatureName: outputFeatureName,
             expectedEmbeddingDimension: expectedEmbeddingDimension
@@ -41,18 +39,58 @@ public struct CoreMLTextEmbedder: TextEmbedder {
         outputFeatureName: String = "embedding",
         expectedEmbeddingDimension: Int = 384
     ) throws {
+        try self.init(
+            modelCandidates: modelCandidates,
+            tokenizerDirectoryCandidates: [tokenizerDirectory],
+            maxSequenceLength: maxSequenceLength,
+            outputFeatureName: outputFeatureName,
+            expectedEmbeddingDimension: expectedEmbeddingDimension
+        )
+    }
+
+    public init(
+        modelCandidates: [URL],
+        tokenizerDirectoryCandidates: [URL],
+        maxSequenceLength: Int = 128,
+        outputFeatureName: String = "embedding",
+        expectedEmbeddingDimension: Int = 384
+    ) throws {
+        try self.init(
+            assets: CoreMLTextEmbeddingAssets(
+                modelCandidates: modelCandidates,
+                tokenizerDirectoryCandidates: tokenizerDirectoryCandidates
+            ),
+            maxSequenceLength: maxSequenceLength,
+            outputFeatureName: outputFeatureName,
+            expectedEmbeddingDimension: expectedEmbeddingDimension
+        )
+    }
+
+    public init(
+        assets: CoreMLTextEmbeddingAssets,
+        maxSequenceLength: Int = 128,
+        outputFeatureName: String = "embedding",
+        expectedEmbeddingDimension: Int = 384
+    ) throws {
         guard maxSequenceLength > 0 else {
             throw EmbeddingError.invalidMaxSequenceLength(maxSequenceLength)
         }
+        guard !assets.modelCandidates.isEmpty else {
+            throw EmbeddingError.modelAssetMissing(candidates: [])
+        }
+        guard let tokenizerDirectory = assets.tokenizerDirectoryCandidates.first else {
+            throw EmbeddingError.tokenizerAssetsMissing(candidates: [])
+        }
 
-        self.modelCandidates = modelCandidates
+        self.assets = assets
+        self.modelCandidates = assets.modelCandidates
         self.tokenizerDirectory = tokenizerDirectory
+        self.tokenizerDirectoryCandidates = assets.tokenizerDirectoryCandidates
         self.maxSequenceLength = maxSequenceLength
         self.outputFeatureName = outputFeatureName
         self.expectedEmbeddingDimension = expectedEmbeddingDimension
         self.runtime = CoreMLTextEmbedderRuntime(
-            modelCandidates: modelCandidates,
-            tokenizerDirectory: tokenizerDirectory,
+            assets: assets,
             maxSequenceLength: maxSequenceLength,
             outputFeatureName: outputFeatureName,
             expectedEmbeddingDimension: expectedEmbeddingDimension
@@ -65,11 +103,19 @@ public struct CoreMLTextEmbedder: TextEmbedder {
 
     @discardableResult
     public func validateAssets(fileManager: FileManager = .default) throws -> URL {
-        try Self.validateAssets(
-            modelCandidates: modelCandidates,
-            tokenizerDirectory: tokenizerDirectory,
-            fileManager: fileManager
-        )
+        try resolvedAssets(fileManager: fileManager).modelURL
+    }
+
+    public func resolvedAssets(
+        fileManager: FileManager = .default
+    ) throws -> CoreMLTextEmbeddingResolvedAssets {
+        try assets.resolve(fileManager: fileManager)
+    }
+
+    public func assetStatus(
+        fileManager: FileManager = .default
+    ) -> CoreMLTextEmbeddingAssetStatus {
+        assets.status(fileManager: fileManager)
     }
 
     static func validateAssets(
@@ -77,31 +123,23 @@ public struct CoreMLTextEmbedder: TextEmbedder {
         tokenizerDirectory: URL,
         fileManager: FileManager = .default
     ) throws -> URL {
-        let modelURL = modelCandidates.first { candidate in
-            fileManager.fileExists(atPath: candidate.path)
-        }
+        try CoreMLTextEmbeddingAssets.resolve(
+            modelCandidates: modelCandidates,
+            tokenizerDirectoryCandidates: [tokenizerDirectory],
+            fileManager: fileManager
+        ).modelURL
+    }
 
-        guard let modelURL else {
-            throw EmbeddingError.modelAssetMissing(
-                candidates: modelCandidates.map(\.path)
-            )
-        }
-
-        var isDirectory: ObjCBool = false
-        guard fileManager.fileExists(atPath: tokenizerDirectory.path, isDirectory: &isDirectory),
-              isDirectory.boolValue
-        else {
-            throw EmbeddingError.tokenizerAssetMissing(path: tokenizerDirectory.path)
-        }
-
-        for filename in Self.requiredTokenizerFiles {
-            let fileURL = tokenizerDirectory.appendingPathComponent(filename)
-            guard fileManager.fileExists(atPath: fileURL.path) else {
-                throw EmbeddingError.tokenizerFileMissing(path: fileURL.path)
-            }
-        }
-
-        return modelURL
+    static func resolveAssets(
+        modelCandidates: [URL],
+        tokenizerDirectoryCandidates: [URL],
+        fileManager: FileManager = .default
+    ) throws -> CoreMLTextEmbeddingResolvedAssets {
+        try CoreMLTextEmbeddingAssets.resolve(
+            modelCandidates: modelCandidates,
+            tokenizerDirectoryCandidates: tokenizerDirectoryCandidates,
+            fileManager: fileManager
+        )
     }
 
     static func loadModel(from modelURL: URL) throws -> MLModel {
@@ -163,23 +201,21 @@ public struct CoreMLTextEmbedder: TextEmbedder {
 }
 
 private actor CoreMLTextEmbedderRuntime {
-    private let modelCandidates: [URL]
-    private let tokenizerDirectory: URL
+    private let assets: CoreMLTextEmbeddingAssets
     private let maxSequenceLength: Int
     private let outputFeatureName: String
     private let expectedEmbeddingDimension: Int
+    private var resolvedAssets: CoreMLTextEmbeddingResolvedAssets?
     private var tokenizer: HuggingFaceTextTokenizer?
     private var model: MLModel?
 
     init(
-        modelCandidates: [URL],
-        tokenizerDirectory: URL,
+        assets: CoreMLTextEmbeddingAssets,
         maxSequenceLength: Int,
         outputFeatureName: String,
         expectedEmbeddingDimension: Int
     ) {
-        self.modelCandidates = modelCandidates
-        self.tokenizerDirectory = tokenizerDirectory
+        self.assets = assets
         self.maxSequenceLength = maxSequenceLength
         self.outputFeatureName = outputFeatureName
         self.expectedEmbeddingDimension = expectedEmbeddingDimension
@@ -214,8 +250,9 @@ private actor CoreMLTextEmbedderRuntime {
             return tokenizer
         }
 
+        let resolvedAssets = try cachedAssets()
         let loadedTokenizer = try await HuggingFaceTextTokenizer.load(
-            from: tokenizerDirectory,
+            from: resolvedAssets.tokenizerDirectory,
             maxSequenceLength: maxSequenceLength
         )
         tokenizer = loadedTokenizer
@@ -227,13 +264,20 @@ private actor CoreMLTextEmbedderRuntime {
             return model
         }
 
-        let modelURL = try CoreMLTextEmbedder.validateAssets(
-            modelCandidates: modelCandidates,
-            tokenizerDirectory: tokenizerDirectory
-        )
-        let loadedModel = try CoreMLTextEmbedder.loadModel(from: modelURL)
+        let resolvedAssets = try cachedAssets()
+        let loadedModel = try CoreMLTextEmbedder.loadModel(from: resolvedAssets.modelURL)
         model = loadedModel
         return loadedModel
+    }
+
+    private func cachedAssets() throws -> CoreMLTextEmbeddingResolvedAssets {
+        if let resolvedAssets {
+            return resolvedAssets
+        }
+
+        let loadedAssets = try assets.resolve()
+        resolvedAssets = loadedAssets
+        return loadedAssets
     }
 }
 

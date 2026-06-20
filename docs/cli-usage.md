@@ -13,6 +13,8 @@ pip install -r requirements-convert.txt
 python scripts/convert_e5_small_to_coreml.py --validate
 ```
 
+The conversion script defaults to `FLOAT32`, which is the recommended starting point for visionOS apps. Use `--compute-precision FLOAT16` only when explicitly testing macOS or device-specific behavior.
+
 Expected local assets:
 
 ```text

@@ -7,6 +7,7 @@ public enum EmbeddingError: Error, Equatable, Sendable {
     case vectorLengthMismatch(left: Int, right: Int)
     case modelAssetMissing(candidates: [String])
     case tokenizerAssetMissing(path: String)
+    case tokenizerAssetsMissing(candidates: [String])
     case tokenizerFileMissing(path: String)
     case tokenIDOutOfInt32Range(Int)
     case coreMLInputLengthMismatch(inputIDs: Int, attentionMask: Int)
@@ -35,6 +36,9 @@ extension EmbeddingError: LocalizedError {
             return "Core ML model asset not found. Checked: \(joined)."
         case .tokenizerAssetMissing(let path):
             return "Tokenizer directory not found at \(path)."
+        case .tokenizerAssetsMissing(let candidates):
+            let joined = candidates.joined(separator: ", ")
+            return "Tokenizer assets not found. Checked: \(joined)."
         case .tokenizerFileMissing(let path):
             return "Tokenizer file not found at \(path)."
         case .tokenIDOutOfInt32Range(let tokenID):

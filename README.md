@@ -1,8 +1,8 @@
-# E5 Core ML Swift Embedding CLI
+# E5 Core ML Swift
 
-Swift Package Manager command-line sample for generating text embeddings locally with a Core ML converted E5 model.
+Swift Package Manager library and command-line sample for generating text embeddings locally with a Core ML converted E5 model.
 
-This repository is a proof-of-concept for building a reusable embedding layer that can later be shared with iOS and visionOS apps.
+This repository is a proof-of-concept for building a reusable embedding layer that can be shared with visionOS apps while keeping macOS CLI tools for local validation.
 
 ## Current status
 
@@ -16,6 +16,8 @@ Implemented:
 - E5 `query:` / `passage:` prefix handling
 - local tokenizer loading with Hugging Face `swift-transformers`
 - Core ML input creation and prediction wiring
+- visionOS package platform support
+- app-bundle asset lookup for Core ML model and tokenizer files
 - conversion script at `scripts/convert_e5_small_to_coreml.py`
 - unit tests for pure Swift logic, Core ML input/output handling, and missing-asset errors
 
@@ -43,6 +45,8 @@ python3.11 -m venv .venv
 pip install -r requirements-convert.txt
 python scripts/convert_e5_small_to_coreml.py --validate
 ```
+
+The conversion script defaults to `FLOAT32`. Use that default for visionOS integration; BrainCopy visionOS Simulator testing saw `FLOAT16` converted models return zero vectors.
 
 The script writes:
 
@@ -112,6 +116,54 @@ swift run e5-embed-similarity --backend deterministic \
 
 For full command and option details, see [`docs/cli-usage.md`](docs/cli-usage.md).
 
+## visionOS app integration
+
+Add the package by URL and depend on the library product:
+
+```swift
+.package(url: "https://github.com/ysake/e5-coreml-swift-embedding-cli", branch: "main")
+```
+
+```swift
+.product(name: "E5EmbeddingCore", package: "e5-coreml-swift")
+```
+
+Add the generated assets to the app target:
+
+```text
+E5SmallEmbedding.mlpackage
+Tokenizer/
+  tokenizer.json
+  tokenizer_config.json
+  special_tokens_map.json
+```
+
+Xcode may compile the model into `E5SmallEmbedding.mlmodelc` in the app bundle. The tokenizer files may also be flattened into the bundle resource root. `CoreMLTextEmbeddingAssets.appBundle()` checks both layouts:
+
+```swift
+import E5EmbeddingCore
+import Foundation
+
+let assets = CoreMLTextEmbeddingAssets.appBundle(.main)
+let embedder = try CoreMLTextEmbedder(assets: assets)
+
+let status = embedder.assetStatus()
+guard status.isReady else {
+    throw NSError(
+        domain: "E5Embedding",
+        code: 1,
+        userInfo: [NSLocalizedDescriptionKey: status.errorDescription ?? "Missing E5 assets"]
+    )
+}
+
+let queryEmbedding = try await embedder.embed(
+    "車内の収納を増やしたい",
+    purpose: .query
+)
+```
+
+Tokenizer inputs are built for E5/XLM-R style models: `<pad>` uses token ID `1`, padding positions get `attention_mask = 0`, and truncation preserves the terminal special token when possible. Core ML output extraction accepts `float16`, `float32`, and `double` `MLMultiArray` values and returns `[Float]`.
+
 ## Goal
 
 Build a minimal Swift CLI that accepts multilingual text and returns an embedding vector.
@@ -149,6 +201,8 @@ Reasons:
 This repository should cover:
 
 - Swift Package Manager CLI
+- reusable `E5EmbeddingCore` library product
+- visionOS app package consumption
 - local tokenizer execution
 - Core ML model inference
 - E5-style `query:` / `passage:` prefixes
@@ -268,11 +322,11 @@ Tokenizer/
 
 ---
 
-# E5 Core ML Swift Embedding CLI（日本語）
+# E5 Core ML Swift（日本語）
 
-Core MLに変換したE5系embeddingモデルを使って、Swift Package Managerのコマンドラインツールからローカルで文章ベクトルを生成するためのサンプルリポジトリです。
+Core MLに変換したE5系embeddingモデルを使って、Swift Package Managerのlibraryとコマンドラインツールからローカルで文章ベクトルを生成するためのリポジトリです。
 
-将来的には、ここで作ったembedding層をiOS / visionOSアプリから再利用することを想定しています。
+macOS CLIでローカル検証しながら、`E5EmbeddingCore` を visionOS アプリから再利用できる構成にしています。
 
 ## 現在の状態
 
@@ -286,6 +340,8 @@ Core MLに変換したE5系embeddingモデルを使って、Swift Package Manage
 - E5の `query:` / `passage:` prefix処理
 - Hugging Face `swift-transformers` によるローカルtokenizer読み込み
 - Core ML入力生成とprediction呼び出し
+- visionOS package platform 対応
+- app bundle内のCore ML model / tokenizer asset lookup
 - `scripts/convert_e5_small_to_coreml.py` の変換スクリプト
 - pure Swift logic、Core ML入出力、asset未配置エラーのunit test
 
@@ -313,6 +369,8 @@ python3.11 -m venv .venv
 pip install -r requirements-convert.txt
 python scripts/convert_e5_small_to_coreml.py --validate
 ```
+
+変換スクリプトは `FLOAT32` を標準にしています。BrainCopy の visionOS Simulator 検証では `FLOAT16` 変換モデルがゼロベクトルを返したため、visionOS 組み込みではこの標準から始めてください。
 
 スクリプトは以下を書き出します。
 
@@ -382,6 +440,54 @@ swift run e5-embed-similarity --backend deterministic \
 
 コマンドとオプションの詳細は [`docs/cli-usage.ja.md`](docs/cli-usage.ja.md) を参照してください。
 
+## visionOSアプリ組み込み
+
+Package URLを追加し、library productに依存します。
+
+```swift
+.package(url: "https://github.com/ysake/e5-coreml-swift-embedding-cli", branch: "main")
+```
+
+```swift
+.product(name: "E5EmbeddingCore", package: "e5-coreml-swift")
+```
+
+生成済みassetsをアプリtargetに追加します。
+
+```text
+E5SmallEmbedding.mlpackage
+Tokenizer/
+  tokenizer.json
+  tokenizer_config.json
+  special_tokens_map.json
+```
+
+Xcodeはmodelを `E5SmallEmbedding.mlmodelc` としてbundleへ配置する場合があります。tokenizer filesがbundle rootにflattenされる場合もあります。`CoreMLTextEmbeddingAssets.appBundle()` は両方のlayoutを探します。
+
+```swift
+import E5EmbeddingCore
+import Foundation
+
+let assets = CoreMLTextEmbeddingAssets.appBundle(.main)
+let embedder = try CoreMLTextEmbedder(assets: assets)
+
+let status = embedder.assetStatus()
+guard status.isReady else {
+    throw NSError(
+        domain: "E5Embedding",
+        code: 1,
+        userInfo: [NSLocalizedDescriptionKey: status.errorDescription ?? "Missing E5 assets"]
+    )
+}
+
+let queryEmbedding = try await embedder.embed(
+    "車内の収納を増やしたい",
+    purpose: .query
+)
+```
+
+Tokenizer入力はE5/XLM-R系に合わせています。`<pad>` は token ID `1`、padding位置は `attention_mask = 0`、truncation時は可能な限り終端special tokenを保持します。Core ML出力は `float16` / `float32` / `double` の `MLMultiArray` を `[Float]` として読み出します。
+
 ## 目的
 
 日本語または多言語のテキストを入力し、embeddingベクトルを返す最小CLIを作ります。
@@ -419,6 +525,8 @@ swift run e5-embed "車内の収納を増やしたい"
 このリポジトリで扱うこと:
 
 - Swift Package ManagerのCLI
+- 再利用可能な `E5EmbeddingCore` library product
+- visionOSアプリからのSwiftPM dependency利用
 - ローカルtokenizer実行
 - Core MLモデル推論
 - E5形式の `query:` / `passage:` prefix

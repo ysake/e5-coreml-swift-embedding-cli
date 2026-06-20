@@ -3,9 +3,10 @@
 import PackageDescription
 
 let package = Package(
-    name: "e5-coreml-swift-embedding-cli",
+    name: "e5-coreml-swift",
     platforms: [
-        .macOS(.v13)
+        .macOS(.v13),
+        .visionOS(.v1)
     ],
     products: [
         .library(

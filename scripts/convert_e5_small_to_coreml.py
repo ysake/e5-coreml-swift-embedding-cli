@@ -12,6 +12,8 @@ and returns:
 
 The PyTorch wrapper performs attention-mask-aware mean pooling followed by
 L2 normalization, so Swift only needs to tokenize text and run prediction.
+FLOAT32 is the default because FLOAT16 models have produced zero vectors in
+visionOS Simulator testing.
 """
 
 from __future__ import annotations
@@ -72,7 +74,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--compute-precision",
         choices=("FLOAT16", "FLOAT32"),
-        default="FLOAT16",
+        default="FLOAT32",
     )
     parser.add_argument(
         "--validate",

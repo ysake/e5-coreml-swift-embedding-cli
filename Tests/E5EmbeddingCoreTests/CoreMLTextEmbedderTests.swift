@@ -84,6 +84,77 @@ final class CoreMLTextEmbedderTests: XCTestCase {
         XCTAssertEqual(try embedder.validateAssets(), model)
     }
 
+    func testResolvesTokenizerDirectoryFromMultipleCandidates() throws {
+        let sandbox = try makeTemporaryDirectory()
+        let model = sandbox.appendingPathComponent("Fake.mlmodelc")
+        let missingTokenizer = sandbox.appendingPathComponent("MissingTokenizer")
+        let tokenizer = sandbox.appendingPathComponent("Tokenizer")
+        try FileManager.default.createDirectory(at: model, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: tokenizer, withIntermediateDirectories: true)
+
+        for filename in CoreMLTextEmbedder.requiredTokenizerFiles {
+            try Data("{}".utf8).write(to: tokenizer.appendingPathComponent(filename))
+        }
+
+        let embedder = try CoreMLTextEmbedder(
+            modelCandidates: [model],
+            tokenizerDirectoryCandidates: [missingTokenizer, tokenizer]
+        )
+
+        let resolvedAssets = try embedder.resolvedAssets()
+
+        XCTAssertEqual(resolvedAssets.modelURL, model)
+        XCTAssertEqual(resolvedAssets.tokenizerDirectory, tokenizer)
+    }
+
+    func testResolvesFlattenedBundleTokenizerAssets() throws {
+        let sandbox = try makeTemporaryDirectory()
+        let model = sandbox.appendingPathComponent("E5SmallEmbedding.mlmodelc")
+        let missingTokenizer = sandbox.appendingPathComponent("Tokenizer")
+        try FileManager.default.createDirectory(at: model, withIntermediateDirectories: true)
+
+        for filename in CoreMLTextEmbedder.requiredTokenizerFiles {
+            try Data("{}".utf8).write(to: sandbox.appendingPathComponent(filename))
+        }
+
+        let assets = CoreMLTextEmbeddingAssets(
+            modelCandidates: [model],
+            tokenizerDirectoryCandidates: [missingTokenizer, sandbox]
+        )
+
+        let resolvedAssets = try assets.resolve()
+
+        XCTAssertEqual(resolvedAssets.modelURL, model)
+        XCTAssertEqual(resolvedAssets.tokenizerDirectory, sandbox)
+    }
+
+    func testAssetStatusReportsReadyAssetsAndModelSize() throws {
+        let sandbox = try makeTemporaryDirectory()
+        let model = sandbox.appendingPathComponent("Fake.mlmodelc")
+        let modelWeights = model.appendingPathComponent("weights.bin")
+        let tokenizer = sandbox.appendingPathComponent("Tokenizer")
+        try FileManager.default.createDirectory(at: model, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: tokenizer, withIntermediateDirectories: true)
+        try Data([1, 2, 3, 4]).write(to: modelWeights)
+
+        for filename in CoreMLTextEmbedder.requiredTokenizerFiles {
+            try Data("{}".utf8).write(to: tokenizer.appendingPathComponent(filename))
+        }
+
+        let assets = CoreMLTextEmbeddingAssets(
+            modelCandidates: [model],
+            tokenizerDirectory: tokenizer
+        )
+
+        let status = assets.status()
+
+        XCTAssertTrue(status.isReady)
+        XCTAssertEqual(status.modelURL, model)
+        XCTAssertEqual(status.tokenizerDirectory, tokenizer)
+        XCTAssertEqual(status.modelSizeInBytes, 4)
+        XCTAssertNil(status.errorDescription)
+    }
+
     func testEmbedsWithRealAssetsWhenPresent() async throws {
         let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
         let embedder = try CoreMLTextEmbedder(repositoryRoot: root)

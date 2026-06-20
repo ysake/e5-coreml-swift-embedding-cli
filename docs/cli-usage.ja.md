@@ -13,6 +13,8 @@ pip install -r requirements-convert.txt
 python scripts/convert_e5_small_to_coreml.py --validate
 ```
 
+変換スクリプトの標準は `FLOAT32` です。visionOS アプリ組み込みではこの標準から始めてください。macOS や実機ごとの挙動を明示的に試す場合だけ `--compute-precision FLOAT16` を指定します。
+
 生成される assets:
 
 ```text

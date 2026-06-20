@@ -36,6 +36,42 @@ final class CoreMLTextEmbedderOutputTests: XCTestCase {
         XCTAssertEqual(embedding, [0.1, -0.2, 0.3])
     }
 
+    func testExtractsFloat16EmbeddingOutput() throws {
+        let provider = try FakeOutputProvider(
+            features: [
+                "embedding": MLFeatureValue(
+                    multiArray: Self.makeArray([0.5, -0.25, 0.125], dataType: .float16)
+                )
+            ]
+        )
+
+        let embedding = try CoreMLTextEmbedder.embeddingVector(
+            from: provider,
+            outputFeatureName: "embedding",
+            expectedDimension: 3
+        )
+
+        XCTAssertEqual(embedding, [0.5, -0.25, 0.125])
+    }
+
+    func testExtractsDoubleEmbeddingOutput() throws {
+        let provider = try FakeOutputProvider(
+            features: [
+                "embedding": MLFeatureValue(
+                    multiArray: Self.makeArray([0.25, -0.5], dataType: .double)
+                )
+            ]
+        )
+
+        let embedding = try CoreMLTextEmbedder.embeddingVector(
+            from: provider,
+            outputFeatureName: "embedding",
+            expectedDimension: 2
+        )
+
+        XCTAssertEqual(embedding, [0.25, -0.5])
+    }
+
     func testFallsBackToOnlyOutputFeature() throws {
         let provider = try FakeOutputProvider(
             features: ["Identity": MLFeatureValue(multiArray: Self.makeFloatArray([0.4, 0.5]))]
@@ -70,9 +106,16 @@ final class CoreMLTextEmbedderOutputTests: XCTestCase {
     }
 
     private static func makeFloatArray(_ values: [Float]) throws -> MLMultiArray {
+        try makeArray(values.map(Double.init), dataType: .float32)
+    }
+
+    private static func makeArray(
+        _ values: [Double],
+        dataType: MLMultiArrayDataType
+    ) throws -> MLMultiArray {
         let array = try MLMultiArray(
             shape: [1, NSNumber(value: values.count)],
-            dataType: .float32
+            dataType: dataType
         )
 
         for (index, value) in values.enumerated() {
