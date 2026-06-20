@@ -65,14 +65,14 @@ special_tokens_map.json
 
 ## Add the package
 
-Until the repository is renamed, use the repository URL identity in the product dependency:
+Use the repository URL identity in the product dependency:
 
 ```swift
-.package(url: "https://github.com/ysake/e5-coreml-swift-embedding-cli", branch: "main")
+.package(url: "https://github.com/ysake/e5-coreml-swift", branch: "main")
 ```
 
 ```swift
-.product(name: "E5EmbeddingCore", package: "e5-coreml-swift-embedding-cli")
+.product(name: "E5EmbeddingCore", package: "e5-coreml-swift")
 ```
 
 ## Load from the app bundle

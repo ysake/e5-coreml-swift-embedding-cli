@@ -65,14 +65,14 @@ special_tokens_map.json
 
 ## Package の追加
 
-repository rename 前は、SwiftPM の URL identity に合わせて product dependency を指定します。
+SwiftPM の URL identity に合わせて product dependency を指定します。
 
 ```swift
-.package(url: "https://github.com/ysake/e5-coreml-swift-embedding-cli", branch: "main")
+.package(url: "https://github.com/ysake/e5-coreml-swift", branch: "main")
 ```
 
 ```swift
-.product(name: "E5EmbeddingCore", package: "e5-coreml-swift-embedding-cli")
+.product(name: "E5EmbeddingCore", package: "e5-coreml-swift")
 ```
 
 ## App bundle から読み込む
