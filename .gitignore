@@ -32,6 +32,8 @@ playground.xcworkspace
 .build/
 
 # Python
+.venv/
+.venv*/
 __pycache__/
 *.py[cod]
 
@@ -40,6 +42,7 @@ __pycache__/
 Models/*.mlpackage/
 Models/*.mlmodelc/
 Models/*.mlmodel
+Tokenizer/
 
 # CocoaPods
 #
