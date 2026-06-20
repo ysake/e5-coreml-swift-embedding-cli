@@ -14,6 +14,7 @@ public struct CoreMLTextEmbedder: TextEmbedder {
     public let maxSequenceLength: Int
     public let outputFeatureName: String
     public let expectedEmbeddingDimension: Int
+    private let runtime: CoreMLTextEmbedderRuntime
 
     public init(
         repositoryRoot: URL = URL(fileURLWithPath: FileManager.default.currentDirectoryPath),
@@ -49,38 +50,33 @@ public struct CoreMLTextEmbedder: TextEmbedder {
         self.maxSequenceLength = maxSequenceLength
         self.outputFeatureName = outputFeatureName
         self.expectedEmbeddingDimension = expectedEmbeddingDimension
+        self.runtime = CoreMLTextEmbedderRuntime(
+            modelCandidates: modelCandidates,
+            tokenizerDirectory: tokenizerDirectory,
+            maxSequenceLength: maxSequenceLength,
+            outputFeatureName: outputFeatureName,
+            expectedEmbeddingDimension: expectedEmbeddingDimension
+        )
     }
 
     public func embed(_ text: String, purpose: EmbeddingPurpose) async throws -> [Float] {
-        guard !text.isEmpty else {
-            throw EmbeddingError.emptyInput
-        }
-
-        let modelURL = try validateAssets()
-        let tokenizer = try await HuggingFaceTextTokenizer.load(
-            from: tokenizerDirectory,
-            maxSequenceLength: maxSequenceLength
-        )
-        let tokenizedInput = try await tokenizer.tokenize(text, purpose: purpose)
-        let model = try Self.loadModel(from: modelURL)
-        let inputProvider = try CoreMLTextEmbeddingInputProvider(input: tokenizedInput.coreMLInput)
-
-        let outputProvider: MLFeatureProvider
-        do {
-            outputProvider = try model.prediction(from: inputProvider)
-        } catch {
-            throw EmbeddingError.coreMLPredictionFailed(reason: error.localizedDescription)
-        }
-
-        return try Self.embeddingVector(
-            from: outputProvider,
-            outputFeatureName: outputFeatureName,
-            expectedDimension: expectedEmbeddingDimension
-        )
+        try await runtime.embed(text, purpose: purpose)
     }
 
     @discardableResult
     public func validateAssets(fileManager: FileManager = .default) throws -> URL {
+        try Self.validateAssets(
+            modelCandidates: modelCandidates,
+            tokenizerDirectory: tokenizerDirectory,
+            fileManager: fileManager
+        )
+    }
+
+    static func validateAssets(
+        modelCandidates: [URL],
+        tokenizerDirectory: URL,
+        fileManager: FileManager = .default
+    ) throws -> URL {
         let modelURL = modelCandidates.first { candidate in
             fileManager.fileExists(atPath: candidate.path)
         }
@@ -163,6 +159,81 @@ public struct CoreMLTextEmbedder: TextEmbedder {
         }
 
         return embedding
+    }
+}
+
+private actor CoreMLTextEmbedderRuntime {
+    private let modelCandidates: [URL]
+    private let tokenizerDirectory: URL
+    private let maxSequenceLength: Int
+    private let outputFeatureName: String
+    private let expectedEmbeddingDimension: Int
+    private var tokenizer: HuggingFaceTextTokenizer?
+    private var model: MLModel?
+
+    init(
+        modelCandidates: [URL],
+        tokenizerDirectory: URL,
+        maxSequenceLength: Int,
+        outputFeatureName: String,
+        expectedEmbeddingDimension: Int
+    ) {
+        self.modelCandidates = modelCandidates
+        self.tokenizerDirectory = tokenizerDirectory
+        self.maxSequenceLength = maxSequenceLength
+        self.outputFeatureName = outputFeatureName
+        self.expectedEmbeddingDimension = expectedEmbeddingDimension
+    }
+
+    func embed(_ text: String, purpose: EmbeddingPurpose) async throws -> [Float] {
+        guard !text.isEmpty else {
+            throw EmbeddingError.emptyInput
+        }
+
+        let model = try cachedModel()
+        let tokenizer = try await cachedTokenizer()
+        let tokenizedInput = try await tokenizer.tokenize(text, purpose: purpose)
+        let inputProvider = try CoreMLTextEmbeddingInputProvider(input: tokenizedInput.coreMLInput)
+
+        let outputProvider: MLFeatureProvider
+        do {
+            outputProvider = try model.prediction(from: inputProvider)
+        } catch {
+            throw EmbeddingError.coreMLPredictionFailed(reason: error.localizedDescription)
+        }
+
+        return try CoreMLTextEmbedder.embeddingVector(
+            from: outputProvider,
+            outputFeatureName: outputFeatureName,
+            expectedDimension: expectedEmbeddingDimension
+        )
+    }
+
+    private func cachedTokenizer() async throws -> HuggingFaceTextTokenizer {
+        if let tokenizer {
+            return tokenizer
+        }
+
+        let loadedTokenizer = try await HuggingFaceTextTokenizer.load(
+            from: tokenizerDirectory,
+            maxSequenceLength: maxSequenceLength
+        )
+        tokenizer = loadedTokenizer
+        return loadedTokenizer
+    }
+
+    private func cachedModel() throws -> MLModel {
+        if let model {
+            return model
+        }
+
+        let modelURL = try CoreMLTextEmbedder.validateAssets(
+            modelCandidates: modelCandidates,
+            tokenizerDirectory: tokenizerDirectory
+        )
+        let loadedModel = try CoreMLTextEmbedder.loadModel(from: modelURL)
+        model = loadedModel
+        return loadedModel
     }
 }
 
