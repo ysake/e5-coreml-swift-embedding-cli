@@ -118,6 +118,10 @@ For full command and option details, see [`docs/cli-usage.md`](docs/cli-usage.md
 
 ## visionOS app integration
 
+For detailed setup, asset packaging, and runtime behavior, see [`docs/visionos-app-integration.md`](docs/visionos-app-integration.md).
+
+`E5EmbeddingCore` does not download the E5 model at app runtime. Generate the Core ML model and tokenizer files before building the app, then bundle those generated assets with the app target.
+
 Add the package by URL and depend on the library product:
 
 ```swift
@@ -441,6 +445,10 @@ swift run e5-embed-similarity --backend deterministic \
 コマンドとオプションの詳細は [`docs/cli-usage.ja.md`](docs/cli-usage.ja.md) を参照してください。
 
 ## visionOSアプリ組み込み
+
+詳細な setup、asset 同梱手順、runtime behavior は [`docs/visionos-app-integration.ja.md`](docs/visionos-app-integration.ja.md) を参照してください。
+
+`E5EmbeddingCore` はアプリ実行時に E5 model をダウンロードしません。アプリを build する前に Core ML model と tokenizer files を生成し、その生成済み assets を app target に同梱します。
 
 Package URLを追加し、library productに依存します。
 

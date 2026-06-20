@@ -15,6 +15,13 @@
 - [`cli-usage.ja.md`](./cli-usage.ja.md)
   - 日本語
 
+## アプリ組み込み
+
+- [`visionos-app-integration.md`](./visionos-app-integration.md)
+  - English
+- [`visionos-app-integration.ja.md`](./visionos-app-integration.ja.md)
+  - 日本語
+
 ## エージェント引き継ぎ
 
 - [`agent-handoff.md`](./agent-handoff.md)
@@ -42,8 +49,9 @@
 
 1. `README.md`
 2. `docs/cli-usage.ja.md`
-3. `docs/agent-handoff.ja.md`
-4. `docs/implementation-plan.ja.md`
-5. `docs/model-conversion-notes.ja.md`
+3. `docs/visionos-app-integration.ja.md`
+4. `docs/agent-handoff.ja.md`
+5. `docs/implementation-plan.ja.md`
+6. `docs/model-conversion-notes.ja.md`
 
 英語で作業するエージェントには、対応する英語版ドキュメントを参照させてください。

@@ -15,6 +15,13 @@ This repository contains the following documents.
 - [`cli-usage.ja.md`](./cli-usage.ja.md)
   - Japanese
 
+## App integration
+
+- [`visionos-app-integration.md`](./visionos-app-integration.md)
+  - English
+- [`visionos-app-integration.ja.md`](./visionos-app-integration.ja.md)
+  - Japanese
+
 ## Agent handoff
 
 - [`agent-handoff.md`](./agent-handoff.md)
@@ -42,8 +49,9 @@ For agent handoff, read these first:
 
 1. `README.md`
 2. `docs/cli-usage.md`
-3. `docs/agent-handoff.md`
-4. `docs/implementation-plan.md`
-5. `docs/model-conversion-notes.md`
+3. `docs/visionos-app-integration.md`
+4. `docs/agent-handoff.md`
+5. `docs/implementation-plan.md`
+6. `docs/model-conversion-notes.md`
 
 For Japanese-speaking agents, use the `.ja.md` documents.
