@@ -11,6 +11,8 @@ Implemented:
 - SwiftPM package with `E5EmbeddingCore`
 - `e5-embed` JSON embedding CLI
 - `e5-embed-similarity` JSON similarity CLI
+- `e5-embed-batch` JSONL batch embedding CLI
+- `e5-keyword-graph` exact top-k keyword graph CLI
 - E5 `query:` / `passage:` prefix handling
 - local tokenizer loading with Hugging Face `swift-transformers`
 - Core ML input creation and prediction wiring
@@ -78,6 +80,20 @@ swift run e5-embed-similarity \
   --passage "Cargo organizers and roof boxes can increase available storage in a vehicle."
 ```
 
+Batch embedding and keyword graph:
+
+```bash
+swift run e5-embed-batch \
+  --input keywords.txt \
+  --output embeddings.jsonl
+
+swift run e5-keyword-graph \
+  --input embeddings.jsonl \
+  --output edges.csv \
+  --top-k 10 \
+  --threshold 0.82
+```
+
 Development smoke test without model assets:
 
 ```bash
@@ -131,6 +147,8 @@ This repository should cover:
 - E5-style `query:` / `passage:` prefixes
 - normalized embedding vector output
 - simple similarity calculation
+- batch keyword embedding
+- exact top-k keyword graph generation
 
 ## Non-goals
 
@@ -256,6 +274,8 @@ Core MLに変換したE5系embeddingモデルを使って、Swift Package Manage
 - `E5EmbeddingCore` を持つ SwiftPM package
 - JSONを返す `e5-embed` embedding CLI
 - JSONを返す `e5-embed-similarity` 類似度CLI
+- JSONLを返す `e5-embed-batch` batch embedding CLI
+- exact top-kでedgeを作る `e5-keyword-graph` keyword graph CLI
 - E5の `query:` / `passage:` prefix処理
 - Hugging Face `swift-transformers` によるローカルtokenizer読み込み
 - Core ML入力生成とprediction呼び出し
@@ -323,6 +343,20 @@ swift run e5-embed-similarity \
   --passage "セレナの荷物積載量を増やす方法"
 ```
 
+Batch embedding と keyword graph:
+
+```bash
+swift run e5-embed-batch \
+  --input keywords.txt \
+  --output embeddings.jsonl
+
+swift run e5-keyword-graph \
+  --input embeddings.jsonl \
+  --output edges.csv \
+  --top-k 10 \
+  --threshold 0.82
+```
+
 model assetsなしの開発用smoke test:
 
 ```bash
@@ -376,6 +410,8 @@ swift run e5-embed "車内の収納を増やしたい"
 - E5形式の `query:` / `passage:` prefix
 - 正規化済みembeddingベクトル出力
 - シンプルな類似度計算
+- keywordのbatch embedding
+- exact top-kによるkeyword graph生成
 
 ## 対象外
 

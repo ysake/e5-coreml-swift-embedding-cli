@@ -115,6 +115,114 @@ swift run e5-embed-similarity \
   --passage "Explain the interpretation of wave functions in quantum mechanics."
 ```
 
+## `e5-embed-batch`
+
+Embeds many keywords from a text file and writes JSONL. Each non-empty input line becomes one `StoredEmbedding` record.
+
+```bash
+swift run e5-embed-batch [options] --input <keywords.txt> --output <embeddings.jsonl>
+```
+
+### Options
+
+| Option | Values | Default | Description |
+| --- | --- | --- | --- |
+| `--input` | path or `-` | required | Input text file. One keyword per line. Use `-` for stdin. |
+| `--output` | path or `-` | required | JSONL output path. Use `-` for stdout. |
+| `--purpose` | `query`, `passage` | `passage` | Purpose used for every input line. Keyword catalogs usually use `passage`. |
+| `--backend` | `coreml`, `deterministic` | `coreml` | Selects the embedding backend. |
+| `--model` | path | `Models/E5SmallEmbedding.mlpackage` or `.mlmodelc` | Core ML model path. |
+| `--tokenizer` | path | `Tokenizer` | Directory containing tokenizer assets. |
+| `--max-length` | positive integer | `128` | Token sequence length used for padding and truncation. |
+| `--model-name` | string | `intfloat/multilingual-e5-small` | Overrides the `model` field in JSONL output. |
+
+### Example
+
+`keywords.txt`:
+
+```text
+car storage
+roof box
+seat organizer
+quantum mechanics
+```
+
+Command:
+
+```bash
+swift run e5-embed-batch \
+  --input keywords.txt \
+  --output embeddings.jsonl
+```
+
+Each output line is one JSON record. The `embedding` field contains 384 values and is shown truncated here.
+
+```json
+{"dimension":384,"embedding":[0.0123,-0.0456,"... 382 more values"],"id":"1","model":"intfloat/multilingual-e5-small","purpose":"passage","text":"car storage"}
+```
+
+## `e5-keyword-graph`
+
+Builds an exact top-k graph from `e5-embed-batch` JSONL output. It compares vectors with dot product. Because the converted model returns L2-normalized vectors, the dot product is cosine similarity.
+
+```bash
+swift run e5-keyword-graph [options] --input <embeddings.jsonl> --output <graph-file>
+```
+
+This is exact search, not ANN. It is simple and dependency-free, but pairwise comparison cost grows quickly as keyword count increases.
+
+### Options
+
+| Option | Values | Default | Description |
+| --- | --- | --- | --- |
+| `--input` | path or `-` | required | JSONL produced by `e5-embed-batch`. Use `-` for stdin. |
+| `--output` | path or `-` | required | Output file path. Use `-` for stdout. |
+| `--format` | `csv`, `graphml`, `json` | `csv` | Graph output format. |
+| `--top-k` | positive integer | `10` | Number of nearest neighbors retained per keyword before edge deduplication. |
+| `--threshold` | numeric score | `0.0` | Minimum similarity score for an edge. |
+
+### CSV Example
+
+```bash
+swift run e5-keyword-graph \
+  --input embeddings.jsonl \
+  --output edges.csv \
+  --top-k 10 \
+  --threshold 0.82
+```
+
+CSV columns:
+
+```text
+source_id,source_text,target_id,target_text,score
+```
+
+### GraphML Example
+
+```bash
+swift run e5-keyword-graph \
+  --input embeddings.jsonl \
+  --output graph.graphml \
+  --format graphml \
+  --top-k 10 \
+  --threshold 0.82
+```
+
+GraphML can be opened by tools such as Gephi and Cytoscape.
+
+### JSON Example
+
+```bash
+swift run e5-keyword-graph \
+  --input embeddings.jsonl \
+  --output graph.json \
+  --format json \
+  --top-k 10 \
+  --threshold 0.82
+```
+
+The JSON output contains `nodes` and `edges`.
+
 ## Output Notes
 
 `e5-embed` returns:

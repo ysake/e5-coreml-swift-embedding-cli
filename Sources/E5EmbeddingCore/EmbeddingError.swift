@@ -15,6 +15,8 @@ public enum EmbeddingError: Error, Equatable, Sendable {
     case coreMLOutputMissing(name: String, availableOutputs: [String])
     case coreMLOutputIsNotMultiArray(name: String)
     case unexpectedEmbeddingDimension(expected: Int, actual: Int)
+    case emptyEmbeddingRecords
+    case invalidTopK(Int)
 }
 
 extension EmbeddingError: LocalizedError {
@@ -50,6 +52,10 @@ extension EmbeddingError: LocalizedError {
             return "Core ML output '\(name)' is not an MLMultiArray."
         case .unexpectedEmbeddingDimension(let expected, let actual):
             return "Expected embedding dimension \(expected), got \(actual)."
+        case .emptyEmbeddingRecords:
+            return "At least one embedding record is required."
+        case .invalidTopK(let value):
+            return "top-k must be greater than zero, got \(value)."
         }
     }
 }
