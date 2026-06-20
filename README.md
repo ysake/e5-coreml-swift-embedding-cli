@@ -36,9 +36,9 @@ swift test
 Generate the Core ML model and tokenizer assets:
 
 ```bash
-python3 -m venv .venv
+python3.11 -m venv .venv
 . .venv/bin/activate
-pip install torch transformers coremltools numpy
+pip install -r requirements-convert.txt
 python scripts/convert_e5_small_to_coreml.py --validate
 ```
 
@@ -301,9 +301,9 @@ swift test
 Core MLモデルとtokenizer assetsを生成します。
 
 ```bash
-python3 -m venv .venv
+python3.11 -m venv .venv
 . .venv/bin/activate
-pip install torch transformers coremltools numpy
+pip install -r requirements-convert.txt
 python scripts/convert_e5_small_to_coreml.py --validate
 ```
 
