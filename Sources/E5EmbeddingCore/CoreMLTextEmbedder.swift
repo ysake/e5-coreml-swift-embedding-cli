@@ -287,7 +287,15 @@ private struct SendableMLModel: @unchecked Sendable {
     let model: MLModel
 
     func prediction(from inputProvider: CoreMLTextEmbeddingInputProvider) async throws -> MLFeatureProvider {
-        try await model.prediction(from: inputProvider)
+#if os(macOS)
+        if #available(macOS 14.0, *) {
+            return try await model.prediction(from: inputProvider)
+        } else {
+            return try model.prediction(from: inputProvider)
+        }
+#else
+        return try await model.prediction(from: inputProvider)
+#endif
     }
 }
 
