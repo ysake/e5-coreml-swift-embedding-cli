@@ -233,7 +233,15 @@ private actor CoreMLTextEmbedderRuntime {
 
         let outputProvider: MLFeatureProvider
         do {
+#if os(macOS)
+            if #available(macOS 14.0, *) {
+                outputProvider = try await model.prediction(from: inputProvider)
+            } else {
+                outputProvider = try model.predictionSynchronously(from: inputProvider)
+            }
+#else
             outputProvider = try await model.prediction(from: inputProvider)
+#endif
         } catch {
             throw EmbeddingError.coreMLPredictionFailed(reason: error.localizedDescription)
         }
@@ -286,8 +294,13 @@ private actor CoreMLTextEmbedderRuntime {
 private struct SendableMLModel: @unchecked Sendable {
     let model: MLModel
 
+    @available(macOS 14.0, iOS 17.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *)
     func prediction(from inputProvider: CoreMLTextEmbeddingInputProvider) async throws -> MLFeatureProvider {
         return try await model.prediction(from: inputProvider)
+    }
+
+    func predictionSynchronously(from inputProvider: CoreMLTextEmbeddingInputProvider) throws -> MLFeatureProvider {
+        return try model.prediction(from: inputProvider)
     }
 }
 

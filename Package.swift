@@ -5,7 +5,7 @@ import PackageDescription
 let package = Package(
     name: "e5-coreml-swift",
     platforms: [
-        .macOS(.v14),
+        .macOS(.v13),
         .visionOS(.v1)
     ],
     products: [
