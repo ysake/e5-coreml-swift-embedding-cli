@@ -42,13 +42,13 @@ Observed behavior:
 - The same issue was still observed on visionOS 27 beta.
 - Feedback has been filed with Apple.
 
-Because Japanese embeddings were needed on visionOS, relying only on `NLContextualEmbedding` was not enough. This repository explores an alternative: converting a known multilingual E5 embedding model to Core ML, bundling the model and tokenizer with the app, and running embedding locally.
+Because Japanese embeddings were needed on visionOS, relying only on `NLContextualEmbedding` was not enough. This repository explores an app-controlled fallback path: converting a known multilingual E5 embedding model to Core ML, bundling the model and tokenizer with the app, and running embedding locally.
 
 This is heavier than using the system framework, but it gives the app control over:
 
-- the embedding model
+- the exact embedding model
 - Japanese and multilingual behavior
-- E5 `query:` / `passage:` embedding compatibility
+- E5 `query:` / `passage:` search-compatible embeddings
 - offline execution
 - compatibility with server-side or Python-generated E5 vectors
 
@@ -398,13 +398,13 @@ Appleプラットフォームでローカルembeddingを使う場合、通常は
 
 このprojectではvisionOS上で日本語のsemantic searchを行いたかったため、`NLContextualEmbedding` だけに依存する構成では不十分でした。
 
-そこで代替手段として、多言語embedding modelであるE5をCore MLに変換し、modelとtokenizerをアプリに同梱して、visionOS上でローカルinferenceできる構成を検証しています。
+そこでアプリ側で制御できるfallback pathとして、多言語embedding modelであるE5をCore MLに変換し、modelとtokenizerをアプリに同梱して、visionOS上でローカルinferenceできる構成を検証しています。
 
 OS標準APIを使うよりapp sizeやasset管理の負担は増えますが、代わりに以下をアプリ側で制御できます。
 
-- 使用するembedding model
+- 使用する正確なembedding model
 - 日本語・多言語でのembedding挙動
-- E5の `query:` / `passage:` prefixによる検索向けembedding
+- E5の `query:` / `passage:` prefixによる検索互換embedding
 - オフライン実行
 - server-sideやPython側で生成したE5 embeddingとの互換性
 
