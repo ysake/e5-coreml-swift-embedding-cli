@@ -1,57 +1,32 @@
 # Documentation Index
 
-This repository contains the following documents.
+[日本語版](index.ja.md)
 
-## README
+Start with the root README for setup and quick usage:
 
 - [`README.md`](../README.md)
-  - First half: English
-  - Second half: Japanese
+- [`README.ja.md`](../README.ja.md)
 
-## CLI usage
+## User guides
 
-- [`cli-usage.md`](./cli-usage.md)
-  - English
-- [`cli-usage.ja.md`](./cli-usage.ja.md)
-  - Japanese
+- [`cli-usage.md`](cli-usage.md): complete CLI commands and options
+- [`visionos-app-integration.md`](visionos-app-integration.md): app integration, asset packaging, and runtime behavior
 
-## App integration
+Japanese versions:
 
-- [`visionos-app-integration.md`](./visionos-app-integration.md)
-  - English
-- [`visionos-app-integration.ja.md`](./visionos-app-integration.ja.md)
-  - Japanese
+- [`cli-usage.ja.md`](cli-usage.ja.md)
+- [`visionos-app-integration.ja.md`](visionos-app-integration.ja.md)
 
-## Agent handoff
+## Technical notes
 
-- [`agent-handoff.md`](./agent-handoff.md)
-  - English
-- [`agent-handoff.ja.md`](./agent-handoff.ja.md)
-  - Japanese
+- [`model-conversion-notes.md`](model-conversion-notes.md): Core ML conversion direction and validation notes
+- [`model-conversion-notes.ja.md`](model-conversion-notes.ja.md): Japanese version
 
-## Implementation plan
+## Agent handoff and planning
 
-- [`implementation-plan.md`](./implementation-plan.md)
-  - English
-- [`implementation-plan.ja.md`](./implementation-plan.ja.md)
-  - Japanese
+These documents are mainly for implementation handoff and historical planning. Use the README and user guides first unless you are continuing implementation work.
 
-## Model conversion notes
-
-- [`model-conversion-notes.md`](./model-conversion-notes.md)
-  - English
-- [`model-conversion-notes.ja.md`](./model-conversion-notes.ja.md)
-  - Japanese
-
-## Recommended reading order
-
-For agent handoff, read these first:
-
-1. `README.md`
-2. `docs/cli-usage.md`
-3. `docs/visionos-app-integration.md`
-4. `docs/agent-handoff.md`
-5. `docs/implementation-plan.md`
-6. `docs/model-conversion-notes.md`
-
-For Japanese-speaking agents, use the `.ja.md` documents.
+- [`agent-handoff.md`](agent-handoff.md)
+- [`implementation-plan.md`](implementation-plan.md)
+- [`agent-handoff.ja.md`](agent-handoff.ja.md)
+- [`implementation-plan.ja.md`](implementation-plan.ja.md)
