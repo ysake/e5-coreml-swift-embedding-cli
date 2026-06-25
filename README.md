@@ -1,8 +1,10 @@
 # E5 Core ML Swift
 
-Swift Package Manager library and command-line sample for generating text embeddings locally with a Core ML converted E5 model.
+[日本語版](README.ja.md)
 
-This repository is a proof-of-concept for building a reusable embedding layer that can be shared with visionOS apps while keeping macOS CLI tools for local validation.
+Swift Package Manager library and command-line tools for generating text embeddings locally with a Core ML converted E5 model.
+
+This repository is a proof of concept for building a reusable embedding layer that can be shared with visionOS apps while keeping macOS CLI tools for local validation.
 
 ## Current status
 
@@ -194,41 +196,20 @@ let queryEmbedding = try await embedder.embed(
 
 Tokenizer inputs are built for E5/XLM-R style models: `<pad>` uses token ID `1`, padding positions get `attention_mask = 0`, and truncation preserves the terminal special token when possible. Core ML output extraction accepts `float16`, `float32`, and `double` `MLMultiArray` values and returns `[Float]`.
 
-## Goal
-
-Build a minimal Swift CLI that accepts multilingual text and returns an embedding vector.
-
-```bash
-swift run e5-embed "Find more storage space inside my car"
-```
-
-Expected output:
-
-```json
-{
-  "model": "intfloat/multilingual-e5-small",
-  "purpose": "query",
-  "dimension": 384,
-  "embedding": [0.0123, -0.0456, "... 382 more values"]
-}
-```
-
-The `embedding` array contains `dimension` values. It is shortened in this README for readability.
-
-## Initial target model
+## Target model
 
 Use `intfloat/multilingual-e5-small` first.
 
 Reasons:
 
 - multilingual model, including Japanese
-- relatively small and suitable for a CLI proof-of-concept
+- relatively small and suitable for a CLI proof of concept
 - 384-dimensional output
 - good enough to validate local semantic search behavior before moving to larger models
 
 ## Scope
 
-This repository should cover:
+This repository covers:
 
 - Swift Package Manager CLI
 - reusable `E5EmbeddingCore` library product
@@ -241,9 +222,7 @@ This repository should cover:
 - batch keyword embedding
 - exact top-k keyword graph generation
 
-## Non-goals
-
-This repository does not initially target:
+This repository does not currently target:
 
 - iOS app UI
 - visionOS app UI
@@ -255,62 +234,12 @@ This repository does not initially target:
 
 ```text
 Input text
-  ↓
-E5 prefix
-  - query: ...
-  - passage: ...
-  ↓
-Tokenizer
-  - input_ids
-  - attention_mask
-  ↓
-Core ML model
-  ↓
-L2-normalized embedding
-  ↓
-JSON output / similarity search
+  -> E5 prefix: query: ... / passage: ...
+  -> Tokenizer: input_ids + attention_mask
+  -> Core ML model
+  -> L2-normalized embedding
+  -> JSON output / similarity search
 ```
-
-## Suggested package structure
-
-```text
-.
-├── Package.swift
-├── README.md
-├── docs/
-│   ├── agent-handoff.md
-│   └── agent-handoff.ja.md
-├── Models/
-│   └── E5SmallEmbedding.mlpackage
-├── Tokenizer/
-│   ├── tokenizer.json
-│   ├── tokenizer_config.json
-│   └── special_tokens_map.json
-├── Sources/
-│   ├── E5EmbeddingCore/
-│   │   ├── E5Embedder.swift
-│   │   ├── EmbeddingPurpose.swift
-│   │   ├── CoreMLEmbeddingModel.swift
-│   │   └── CosineSimilarity.swift
-│   └── E5EmbedCLI/
-│       └── main.swift
-└── Tests/
-    └── E5EmbeddingCoreTests/
-        └── E5EmbeddingCoreTests.swift
-```
-
-## CLI design
-
-For command and option details, see [`docs/cli-usage.md`](docs/cli-usage.md).
-
-## Implementation notes
-
-- Use `intfloat/multilingual-e5-small` first.
-- The Core ML model should output a single normalized vector.
-- Mean pooling and L2 normalization should preferably be included in the converted Core ML model.
-- Swift should handle tokenization, Core ML invocation, output formatting, and similarity calculation.
-- Use `Float` for embedding values.
-- If vectors are already L2-normalized, dot product can be used as cosine similarity.
 
 ## Model conversion
 
@@ -322,13 +251,11 @@ scripts/convert_e5_small_to_coreml.py
 
 The script:
 
-1. Load `intfloat/multilingual-e5-small`.
-2. Wrap the encoder with mean pooling.
-3. Apply L2 normalization.
-4. Convert to Core ML `.mlpackage`.
-5. Save as `Models/E5SmallEmbedding.mlpackage`.
-
-## Tokenizer assets
+1. Loads `intfloat/multilingual-e5-small`.
+2. Wraps the encoder with mean pooling.
+3. Applies L2 normalization.
+4. Converts to Core ML `.mlpackage`.
+5. Saves as `Models/E5SmallEmbedding.mlpackage`.
 
 Tokenizer files should come from the same Hugging Face model repository as the converted model.
 
@@ -341,367 +268,7 @@ Tokenizer/
   special_tokens_map.json
 ```
 
-## Acceptance criteria
+## Documentation
 
-- `swift build` succeeds.
-- `swift test` succeeds.
-- `swift run e5-embed "test"` returns JSON.
-- Output vector dimension is 384.
-- `query:` and `passage:` prefixes are handled by the CLI.
-- Similar Japanese texts produce higher similarity than unrelated texts.
-
----
-
-# E5 Core ML Swift（日本語）
-
-Core MLに変換したE5系embeddingモデルを使って、Swift Package Managerのlibraryとコマンドラインツールからローカルで文章ベクトルを生成するためのリポジトリです。
-
-macOS CLIでローカル検証しながら、`E5EmbeddingCore` を visionOS アプリから再利用できる構成にしています。
-
-## 現在の状態
-
-実装済み:
-
-- `E5EmbeddingCore` を持つ SwiftPM package
-- JSONを返す `e5-embed` embedding CLI
-- JSONを返す `e5-embed-similarity` 類似度CLI
-- JSONLを返す `e5-embed-batch` batch embedding CLI
-- exact top-kでedgeを作る `e5-keyword-graph` keyword graph CLI
-- E5の `query:` / `passage:` prefix処理
-- Hugging Face `swift-transformers` によるローカルtokenizer読み込み
-- Core ML入力生成とprediction呼び出し
-- visionOS package platform 対応
-- app bundle内のCore ML model / tokenizer asset lookup
-- `scripts/convert_e5_small_to_coreml.py` の変換スクリプト
-- pure Swift logic、Core ML入出力、asset未配置エラーのunit test
-
-コミットしていないもの:
-
-- `Models/` 配下の生成済みCore ML model artifact
-- `Tokenizer/` 配下の生成済みtokenizer assets
-
-これらは変換スクリプトでローカル生成します。リポジトリで管理する場合はGit LFSの利用を検討してください。
-
-## なぜ `NLContextualEmbedding` ではなく E5 / Core ML なのか
-
-Appleプラットフォームでローカルembeddingを使う場合、通常はまずNaturalLanguage frameworkの `NLContextualEmbedding` を検討します。OS標準APIで使えるため、独自モデルをアプリに同梱せずに済むからです。
-
-ただし、このpackageは、visionOSで `NLContextualEmbedding(language: .japanese)` が期待通りに動作しないケースがあったことをきっかけに作っています。
-
-観測した挙動:
-
-- visionOSでは `NLContextualEmbedding(language: .english)` は動作する。
-- iOSでは `NLContextualEmbedding(language: .japanese)` も動作する。
-- visionOS 26.xでは `NLContextualEmbedding(language: .japanese)` が失敗する。
-- visionOS 27 betaでも同じ問題が残っていることを確認した。
-- AppleにはFeedback済み。
-
-このprojectではvisionOS上で日本語のsemantic searchを行いたかったため、`NLContextualEmbedding` だけに依存する構成では不十分でした。
-
-そこでアプリ側で制御できるfallback pathとして、多言語embedding modelであるE5をCore MLに変換し、modelとtokenizerをアプリに同梱して、visionOS上でローカルinferenceできる構成を検証しています。
-
-OS標準APIを使うよりapp sizeやasset管理の負担は増えますが、代わりに以下をアプリ側で制御できます。
-
-- 使用する正確なembedding model
-- 日本語・多言語でのembedding挙動
-- E5の `query:` / `passage:` prefixによる検索互換embedding
-- オフライン実行
-- server-sideやPython側で生成したE5 embeddingとの互換性
-
-対象の言語・platformで `NLContextualEmbedding` が動く場合は、まずそちらを使うのが自然です。このpackageは、E5互換のembeddingが必要な場合、visionOSで日本語embeddingを安定して扱いたい場合、app側とserver-side pipelineで同じembedding空間を使いたい場合に使います。
-
-## セットアップ
-
-Swift packageをビルド・テストします。
-
-```bash
-swift build
-swift test
-```
-
-Core MLモデルとtokenizer assetsを生成します。
-
-```bash
-python3.11 -m venv .venv
-. .venv/bin/activate
-pip install -r requirements-convert.txt
-python scripts/convert_e5_small_to_coreml.py --validate
-```
-
-変換スクリプトは `FLOAT32` を標準にしています。BrainCopy の visionOS Simulator 検証では `FLOAT16` 変換モデルがゼロベクトルを返したため、visionOS 組み込みではこの標準から始めてください。
-
-スクリプトは以下を書き出します。
-
-```text
-Models/E5SmallEmbedding.mlpackage
-Tokenizer/
-```
-
-model packageは大きくなるため、デフォルトではgit管理から除外しています。
-
-## 使い方
-
-Embedding:
-
-```bash
-swift run e5-embed "車内の収納を増やしたい"
-swift run e5-embed --purpose passage "セレナの荷室容量を増やすには、車内収納やルーフボックスを検討する。"
-```
-
-asset pathを明示する場合:
-
-```bash
-swift run e5-embed \
-  --model Models/E5SmallEmbedding.mlpackage \
-  --tokenizer Tokenizer \
-  --max-length 128 \
-  "テスト"
-```
-
-類似度:
-
-```bash
-swift run e5-embed-similarity \
-  --query "車内の収納を増やしたい" \
-  --passage "セレナの荷物積載量を増やす方法"
-```
-
-Batch embedding と keyword graph:
-
-```bash
-swift run e5-embed-batch \
-  --input keywords.txt \
-  --output embeddings.jsonl
-
-swift run e5-keyword-graph \
-  --input embeddings.jsonl \
-  --output edges.csv \
-  --top-k 10 \
-  --threshold 0.82
-
-swift run e5-keyword-graph \
-  --input embeddings.jsonl \
-  --output graph.dot \
-  --format dot \
-  --top-k 10 \
-  --threshold 0.82
-```
-
-model assetsなしの開発用smoke test:
-
-```bash
-swift run e5-embed --backend deterministic "テスト"
-swift run e5-embed-similarity --backend deterministic \
-  --query "車内の収納を増やしたい" \
-  --passage "セレナの荷物積載量を増やす方法"
-```
-
-コマンドとオプションの詳細は [`docs/cli-usage.ja.md`](docs/cli-usage.ja.md) を参照してください。
-
-## visionOSアプリ組み込み
-
-詳細な setup、asset 同梱手順、runtime behavior は [`docs/visionos-app-integration.ja.md`](docs/visionos-app-integration.ja.md) を参照してください。
-
-`E5EmbeddingCore` はアプリ実行時に E5 model をダウンロードしません。アプリを build する前に Core ML model と tokenizer files を生成し、その生成済み assets を app target に同梱します。
-
-Package URLを追加し、library productに依存します。
-
-```swift
-.package(url: "https://github.com/ysake/e5-coreml-swift", branch: "main")
-```
-
-```swift
-.product(name: "E5EmbeddingCore", package: "e5-coreml-swift")
-```
-
-生成済みassetsをアプリtargetに追加します。
-
-```text
-E5SmallEmbedding.mlpackage
-Tokenizer/
-  tokenizer.json
-  tokenizer_config.json
-  special_tokens_map.json
-```
-
-Xcodeはmodelを `E5SmallEmbedding.mlmodelc` としてbundleへ配置する場合があります。tokenizer filesがbundle rootにflattenされる場合もあります。`CoreMLTextEmbeddingAssets.appBundle()` は両方のlayoutを探します。
-
-```swift
-import E5EmbeddingCore
-import Foundation
-
-let assets = CoreMLTextEmbeddingAssets.appBundle(.main)
-let embedder = try CoreMLTextEmbedder(assets: assets)
-
-let status = embedder.assetStatus()
-guard status.isReady else {
-    throw NSError(
-        domain: "E5Embedding",
-        code: 1,
-        userInfo: [NSLocalizedDescriptionKey: status.errorDescription ?? "Missing E5 assets"]
-    )
-}
-
-let queryEmbedding = try await embedder.embed(
-    "車内の収納を増やしたい",
-    purpose: .query
-)
-```
-
-Tokenizer入力はE5/XLM-R系に合わせています。`<pad>` は token ID `1`、padding位置は `attention_mask = 0`、truncation時は可能な限り終端special tokenを保持します。Core ML出力は `float16` / `float32` / `double` の `MLMultiArray` を `[Float]` として読み出します。
-
-## 目的
-
-日本語または多言語のテキストを入力し、embeddingベクトルを返す最小CLIを作ります。
-
-```bash
-swift run e5-embed "車内の収納を増やしたい"
-```
-
-期待する出力例:
-
-```json
-{
-  "model": "intfloat/multilingual-e5-small",
-  "purpose": "query",
-  "dimension": 384,
-  "embedding": [0.0123, -0.0456, "... 残り382個の値"]
-}
-```
-
-`embedding` 配列には `dimension` 個の値が入ります。このREADMEでは読みやすさのために省略しています。
-
-## 最初に使うモデル
-
-まずは `intfloat/multilingual-e5-small` を使います。
-
-理由:
-
-- 日本語を含む多言語モデル
-- CLIでのPoCに向いた比較的小さなモデル
-- 出力が384次元
-- より大きなモデルへ進む前に、ローカル意味検索の挙動を検証しやすい
-
-## 対象範囲
-
-このリポジトリで扱うこと:
-
-- Swift Package ManagerのCLI
-- 再利用可能な `E5EmbeddingCore` library product
-- visionOSアプリからのSwiftPM dependency利用
-- ローカルtokenizer実行
-- Core MLモデル推論
-- E5形式の `query:` / `passage:` prefix
-- 正規化済みembeddingベクトル出力
-- シンプルな類似度計算
-- keywordのbatch embedding
-- exact top-kによるkeyword graph生成
-
-## 対象外
-
-初期段階では以下は扱いません。
-
-- iOSアプリUI
-- visionOSアプリUI
-- ベクトルDB連携
-- 本番向けモデル配布設計
-- リモートembedding API
-
-## アーキテクチャ
-
-```text
-入力テキスト
-  ↓
-E5 prefix付与
-  - query: ...
-  - passage: ...
-  ↓
-tokenizer
-  - input_ids
-  - attention_mask
-  ↓
-Core ML model
-  ↓
-L2正規化済みembedding
-  ↓
-JSON出力 / 類似検索
-```
-
-## 推奨ディレクトリ構成
-
-```text
-.
-├── Package.swift
-├── README.md
-├── docs/
-│   ├── agent-handoff.md
-│   └── agent-handoff.ja.md
-├── Models/
-│   └── E5SmallEmbedding.mlpackage
-├── Tokenizer/
-│   ├── tokenizer.json
-│   ├── tokenizer_config.json
-│   └── special_tokens_map.json
-├── Sources/
-│   ├── E5EmbeddingCore/
-│   │   ├── E5Embedder.swift
-│   │   ├── EmbeddingPurpose.swift
-│   │   ├── CoreMLEmbeddingModel.swift
-│   │   └── CosineSimilarity.swift
-│   └── E5EmbedCLI/
-│       └── main.swift
-└── Tests/
-    └── E5EmbeddingCoreTests/
-        └── E5EmbeddingCoreTests.swift
-```
-
-## CLI設計
-
-コマンドとオプションの詳細は [`docs/cli-usage.ja.md`](docs/cli-usage.ja.md) を参照してください。
-
-## 実装メモ
-
-- 最初は `intfloat/multilingual-e5-small` を使う。
-- Core MLモデルの出力は単一の正規化済みベクトルにする。
-- mean poolingとL2 normalizationは、できればCore ML変換後モデルに含める。
-- Swift側はtokenization、Core ML呼び出し、出力整形、類似度計算に集中する。
-- embedding値は `Float` で扱う。
-- ベクトルがL2正規化済みなら、dot productをcosine similarityとして扱える。
-
-## モデル変換
-
-Python変換スクリプトは以下にあります。
-
-```text
-scripts/convert_e5_small_to_coreml.py
-```
-
-スクリプトの役割:
-
-1. `intfloat/multilingual-e5-small` を読み込む。
-2. encoderをmean pooling付きでwrapする。
-3. L2 normalizationを適用する。
-4. Core ML `.mlpackage` に変換する。
-5. `Models/E5SmallEmbedding.mlpackage` として保存する。
-
-## tokenizer assets
-
-tokenizerファイルは、Core ML変換元と同じHugging Faceモデルリポジトリから取得します。
-
-想定ファイル:
-
-```text
-Tokenizer/
-  tokenizer.json
-  tokenizer_config.json
-  special_tokens_map.json
-```
-
-## 完了条件
-
-- `swift build` が成功する。
-- `swift test` が成功する。
-- `swift run e5-embed "テスト"` がJSONを返す。
-- 出力ベクトル次元が384である。
-- CLI側で `query:` / `passage:` prefixを扱える。
-- 関連する日本語文同士の類似度が、無関係な文より高くなる。
+- [`docs/index.md`](docs/index.md): documentation index
+- [`docs/index.ja.md`](docs/index.ja.md): Japanese documentation index

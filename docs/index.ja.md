@@ -1,57 +1,32 @@
 # ドキュメント一覧
 
-このリポジトリのドキュメント一覧です。
+[English](index.md)
 
-## README
+セットアップと基本的な使い方は、まずルートの README を参照してください。
 
+- [`README.ja.md`](../README.ja.md)
 - [`README.md`](../README.md)
-  - 前半: English
-  - 後半: 日本語
 
-## CLI の使い方
+## 利用者向けガイド
 
-- [`cli-usage.md`](./cli-usage.md)
-  - English
-- [`cli-usage.ja.md`](./cli-usage.ja.md)
-  - 日本語
+- [`cli-usage.ja.md`](cli-usage.ja.md): CLI コマンドとオプションの詳細
+- [`visionos-app-integration.ja.md`](visionos-app-integration.ja.md): アプリ組み込み、asset 同梱、runtime behavior
 
-## アプリ組み込み
+英語版:
 
-- [`visionos-app-integration.md`](./visionos-app-integration.md)
-  - English
-- [`visionos-app-integration.ja.md`](./visionos-app-integration.ja.md)
-  - 日本語
+- [`cli-usage.md`](cli-usage.md)
+- [`visionos-app-integration.md`](visionos-app-integration.md)
 
-## エージェント引き継ぎ
+## 技術メモ
 
-- [`agent-handoff.md`](./agent-handoff.md)
-  - English
-- [`agent-handoff.ja.md`](./agent-handoff.ja.md)
-  - 日本語
+- [`model-conversion-notes.ja.md`](model-conversion-notes.ja.md): Core ML 変換方針と検証メモ
+- [`model-conversion-notes.md`](model-conversion-notes.md): 英語版
 
-## 実装計画
+## エージェント引き継ぎと計画
 
-- [`implementation-plan.md`](./implementation-plan.md)
-  - English
-- [`implementation-plan.ja.md`](./implementation-plan.ja.md)
-  - 日本語
+以下は主に実装引き継ぎと過去の計画確認用です。通常の利用では README と利用者向けガイドを先に参照してください。
 
-## モデル変換メモ
-
-- [`model-conversion-notes.md`](./model-conversion-notes.md)
-  - English
-- [`model-conversion-notes.ja.md`](./model-conversion-notes.ja.md)
-  - 日本語
-
-## 推奨の読み方
-
-エージェントに作業を引き継ぐ場合は、まず以下の順で読むとよいです。
-
-1. `README.md`
-2. `docs/cli-usage.ja.md`
-3. `docs/visionos-app-integration.ja.md`
-4. `docs/agent-handoff.ja.md`
-5. `docs/implementation-plan.ja.md`
-6. `docs/model-conversion-notes.ja.md`
-
-英語で作業するエージェントには、対応する英語版ドキュメントを参照させてください。
+- [`agent-handoff.ja.md`](agent-handoff.ja.md)
+- [`implementation-plan.ja.md`](implementation-plan.ja.md)
+- [`agent-handoff.md`](agent-handoff.md)
+- [`implementation-plan.md`](implementation-plan.md)

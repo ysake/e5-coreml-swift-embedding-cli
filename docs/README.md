@@ -1,3 +1,3 @@
 # Docs
 
-See `index.md` or `index.ja.md`.
+See the [documentation index](index.md) or [Japanese documentation index](index.ja.md).

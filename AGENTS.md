@@ -13,9 +13,10 @@ Read these files before making changes:
 
 For Japanese instructions, read:
 
-1. `docs/agent-handoff.ja.md`
-2. `docs/implementation-plan.ja.md`
-3. `docs/model-conversion-notes.ja.md`
+1. `README.ja.md`
+2. `docs/agent-handoff.ja.md`
+3. `docs/implementation-plan.ja.md`
+4. `docs/model-conversion-notes.ja.md`
 
 ## Development policy
 

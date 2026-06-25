@@ -6,12 +6,12 @@
 
 作業前に以下を読んでください。
 
-1. `README.md`
+1. `README.ja.md`
 2. `docs/agent-handoff.ja.md`
 3. `docs/implementation-plan.ja.md`
 4. `docs/model-conversion-notes.ja.md`
 
-英語版が必要な場合は、対応する `.md` ファイルを参照してください。
+英語版が必要な場合は、`README.md` と対応する `.md` ファイルを参照してください。
 
 ## 開発方針
 
